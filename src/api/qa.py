@@ -1,10 +1,12 @@
 """Q&A API endpoints for questions, conversations, and search."""
 
+import json
 import logging
-from typing import Optional
+from datetime import datetime
+from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.dependencies.qa_rate_limit import (
@@ -15,6 +17,7 @@ from src.api.dependencies.qa_rate_limit import (
 from src.auth.dependencies import get_current_verified_user
 from src.database.connection import get_db
 from src.database.models.user import User
+from src.qa.export import ExportService
 from src.qa.schemas import (
     ConversationListResponse,
     ConversationResponse,
@@ -23,6 +26,7 @@ from src.qa.schemas import (
     QuestionRequest,
     SearchRequest,
 )
+from src.qa.search import SearchService
 from src.qa.service import QAService
 from src.websocket.manager import WebSocketManager
 
@@ -439,6 +443,354 @@ async def rate_message(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to rate message",
+        ) from exc
+
+
+@router.get(
+    "/search",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Search messages with full-text search",
+    description="Search user's messages using PostgreSQL full-text search with ranking and highlighting.",
+)
+async def search_messages_with_ranking(
+    query: str,
+    conversation_id: Optional[str] = None,
+    limit: int = 10,
+    offset: int = 0,
+    current_user: User = Depends(get_current_verified_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Search messages with full-text search.
+
+    Performs PostgreSQL full-text search with relevance ranking and
+    highlighting of matched terms.
+
+    Args:
+        query: Search query text
+        conversation_id: Optional conversation ID to limit search
+        limit: Maximum number of results (1-100)
+        offset: Offset for pagination
+        current_user: Authenticated and verified user
+        db: Database session
+
+    Returns:
+        dict: Search results with ranking and highlighting
+
+    Raises:
+        HTTPException: If search fails or query is invalid
+    """
+    # Validate parameters
+    if not query or not query.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Search query cannot be empty",
+        )
+
+    if limit < 1 or limit > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Limit must be between 1 and 100",
+        )
+
+    logger.info(
+        "Searching messages with ranking",
+        extra={
+            "user_id": str(current_user.id),
+            "query": query,
+            "conversation_id": conversation_id,
+        },
+    )
+
+    try:
+        search_service = SearchService()
+
+        # Parse conversation_id if provided
+        conv_id = UUID(conversation_id) if conversation_id else None
+
+        messages, total = await search_service.search_messages(
+            db=db,
+            user_id=str(current_user.id),
+            query=query.strip(),
+            conversation_id=conv_id,
+            limit=limit,
+            offset=offset,
+        )
+
+        logger.info(
+            "Messages searched successfully",
+            extra={
+                "user_id": str(current_user.id),
+                "total": total,
+                "returned": len(messages),
+            },
+        )
+
+        return {
+            "messages": messages,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "query": query.strip(),
+        }
+
+    except ValueError as exc:
+        logger.warning(
+            "Invalid search request",
+            extra={
+                "user_id": str(current_user.id),
+                "error": str(exc),
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        logger.error(
+            "Failed to search messages",
+            extra={
+                "user_id": str(current_user.id),
+                "error": str(exc),
+            },
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to search messages",
+        ) from exc
+
+
+@router.get(
+    "/export/{conversation_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Export conversation",
+    description="Export a conversation to PDF or JSON format.",
+)
+async def export_conversation(
+    conversation_id: UUID,
+    format: str = "pdf",
+    current_user: User = Depends(get_current_verified_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Export conversation to specified format.
+
+    Supports PDF and JSON export formats with proper formatting.
+
+    Args:
+        conversation_id: Conversation ID to export
+        format: Export format ('pdf' or 'json')
+        current_user: Authenticated and verified user
+        db: Database session
+
+    Returns:
+        Response: File download response
+
+    Raises:
+        HTTPException: If conversation not found or export fails
+    """
+    logger.info(
+        "Exporting conversation",
+        extra={
+            "user_id": str(current_user.id),
+            "conversation_id": str(conversation_id),
+            "format": format,
+        },
+    )
+
+    if format not in ["pdf", "json"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format must be 'pdf' or 'json'",
+        )
+
+    try:
+        export_service = ExportService()
+
+        if format == "pdf":
+            pdf_bytes = await export_service.export_to_pdf(
+                db=db,
+                conversation_id=conversation_id,
+                user_id=str(current_user.id),
+            )
+
+            logger.info(
+                "Conversation exported to PDF successfully",
+                extra={
+                    "user_id": str(current_user.id),
+                    "conversation_id": str(conversation_id),
+                },
+            )
+
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": f"attachment; filename=conversation_{conversation_id}.pdf"
+                },
+            )
+
+        else:  # format == "json"
+            json_data = await export_service.export_to_json(
+                db=db,
+                conversation_id=conversation_id,
+                user_id=str(current_user.id),
+            )
+
+            logger.info(
+                "Conversation exported to JSON successfully",
+                extra={
+                    "user_id": str(current_user.id),
+                    "conversation_id": str(conversation_id),
+                },
+            )
+
+            return Response(
+                content=json.dumps(json_data, indent=2, ensure_ascii=False).encode("utf-8"),
+                media_type="application/json",
+                headers={
+                    "Content-Disposition": f"attachment; filename=conversation_{conversation_id}.json"
+                },
+            )
+
+    except ValueError as exc:
+        logger.warning(
+            "Invalid export request",
+            extra={
+                "user_id": str(current_user.id),
+                "conversation_id": str(conversation_id),
+                "error": str(exc),
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        logger.error(
+            "Failed to export conversation",
+            extra={
+                "user_id": str(current_user.id),
+                "conversation_id": str(conversation_id),
+                "error": str(exc),
+            },
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to export conversation",
+        ) from exc
+
+
+@router.post(
+    "/export/bulk",
+    status_code=status.HTTP_200_OK,
+    summary="Bulk export conversations",
+    description="Export multiple conversations to JSON format.",
+)
+async def bulk_export_conversations(
+    conversation_ids: List[str],
+    current_user: User = Depends(get_current_verified_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Bulk export multiple conversations.
+
+    Exports multiple conversations to a single JSON file.
+
+    Args:
+        conversation_ids: List of conversation IDs to export
+        current_user: Authenticated and verified user
+        db: Database session
+
+    Returns:
+        Response: JSON file download response
+
+    Raises:
+        HTTPException: If export fails or no valid conversations found
+    """
+    logger.info(
+        "Bulk exporting conversations",
+        extra={
+            "user_id": str(current_user.id),
+            "conversation_count": len(conversation_ids),
+        },
+    )
+
+    if not conversation_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No conversation IDs provided",
+        )
+
+    if len(conversation_ids) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot export more than 100 conversations at once",
+        )
+
+    try:
+        # Convert string IDs to UUIDs
+        uuid_ids = []
+        for conv_id in conversation_ids:
+            try:
+                uuid_ids.append(UUID(conv_id))
+            except ValueError:
+                logger.warning(
+                    "Invalid conversation ID in bulk export",
+                    extra={
+                        "user_id": str(current_user.id),
+                        "conversation_id": conv_id,
+                    },
+                )
+                continue
+
+        if not uuid_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No valid conversation IDs provided",
+            )
+
+        export_service = ExportService()
+
+        json_bytes = await export_service.export_multiple_conversations(
+            db=db,
+            conversation_ids=uuid_ids,
+            user_id=str(current_user.id),
+            format="json",
+        )
+
+        logger.info(
+            "Conversations bulk exported successfully",
+            extra={
+                "user_id": str(current_user.id),
+                "conversation_count": len(uuid_ids),
+            },
+        )
+
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        return Response(
+            content=json_bytes,
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f"attachment; filename=conversations_export_{timestamp}.json"
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(
+            "Failed to bulk export conversations",
+            extra={
+                "user_id": str(current_user.id),
+                "conversation_count": len(conversation_ids),
+                "error": str(exc),
+            },
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to export conversations",
         ) from exc
 
 
