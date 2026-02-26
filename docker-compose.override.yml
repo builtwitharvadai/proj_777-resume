@@ -1,0 +1,59 @@
+version: '3.8'
+
+# Development-specific overrides for hot reload and debugging
+
+services:
+  backend:
+    build:
+      target: development
+    environment:
+      - DEBUG=True
+      - LOG_LEVEL=DEBUG
+      - DB_ECHO=True
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src:ro
+      - ./alembic:/app/alembic:ro
+      - ./tests:/app/tests:ro
+      - ./pyproject.toml:/app/pyproject.toml:ro
+      - ./alembic.ini:/app/alembic.ini:ro
+    ports:
+      - "8000:8000"
+      # Debug port for Python debugger
+      - "5678:5678"
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
+      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ./frontend/tailwind.config.js:/app/tailwind.config.js:ro
+      - ./frontend/postcss.config.js:/app/postcss.config.js:ro
+      # Exclude node_modules to prevent host sync
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+  db:
+    environment:
+      # Enable detailed logging in development
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --loglevel debug
