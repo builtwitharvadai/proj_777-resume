@@ -1,33 +1,7 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-
-function LandingPage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center">
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-5xl font-bold text-primary-900 mb-6">
-          Welcome to Resume Builder
-        </h1>
-        <p className="text-xl text-secondary-700 mb-8">
-          Create professional resumes powered by AI
-        </p>
-        <div className="flex gap-4 justify-center">
-          <a
-            href="/dashboard"
-            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
-          >
-            Get Started
-          </a>
-          <a
-            href="/dashboard"
-            className="px-6 py-3 bg-white text-primary-600 border-2 border-primary-600 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
-          >
-            View Dashboard
-          </a>
-        </div>
-      </div>
-    </div>
-  )
-}
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import Header from './components/common/Header'
+import Footer from './components/common/Footer'
+import LandingPage from './pages/LandingPage'
 
 function DashboardPage() {
   return (
@@ -56,13 +30,28 @@ function DashboardPage() {
   )
 }
 
+function AppLayout({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
+  const showHeaderFooter = location.pathname === '/'
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {showHeaderFooter && <Header />}
+      <div className="flex-1">{children}</div>
+      {showHeaderFooter && <Footer />}
+    </div>
+  )
+}
+
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AppLayout>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppLayout>
   )
 }
 
