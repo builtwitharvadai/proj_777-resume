@@ -1,0 +1,206 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "maintainers"
+    assignees:
+      - "maintainers"
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      fastapi-ecosystem:
+        patterns:
+          - "fastapi*"
+          - "uvicorn*"
+          - "pydantic*"
+        update-types:
+          - "minor"
+          - "patch"
+      database-ecosystem:
+        patterns:
+          - "sqlalchemy*"
+          - "alembic*"
+          - "asyncpg*"
+          - "psycopg*"
+        update-types:
+          - "minor"
+          - "patch"
+      testing-tools:
+        patterns:
+          - "pytest*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Node.js dependencies (frontend)
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "maintainers"
+    assignees:
+      - "maintainers"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "frontend"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-router*"
+          - "@types/react*"
+        update-types:
+          - "minor"
+          - "patch"
+      build-tools:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+          - "typescript"
+        update-types:
+          - "minor"
+          - "patch"
+      linting-tools:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+        update-types:
+          - "minor"
+          - "patch"
+      styling-tools:
+        patterns:
+          - "tailwindcss"
+          - "postcss"
+          - "autoprefixer"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker base images
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "maintainers"
+    assignees:
+      - "maintainers"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+
+  # Docker frontend images
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "maintainers"
+    assignees:
+      - "maintainers"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "frontend"
+      - "security"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "maintainers"
+    assignees:
+      - "maintainers"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    groups:
+      docker-actions:
+        patterns:
+          - "docker/*"
+        update-types:
+          - "minor"
+          - "patch"
+      security-actions:
+        patterns:
+          - "github/codeql-action"
+          - "aquasecurity/*"
+          - "anchore/*"
+        update-types:
+          - "minor"
+          - "patch"
+      common-actions:
+        patterns:
+          - "actions/*"
+        update-types:
+          - "minor"
+          - "patch"
