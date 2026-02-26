@@ -109,5 +109,37 @@ class Settings(BaseSettings):
         description="List of allowed MIME types for file uploads",
     )
 
+    # Redis Configuration
+    REDIS_URL: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis connection URL for caching and session storage",
+    )
+
+    # Celery Configuration
+    CELERY_BROKER_URL: str = Field(
+        default="redis://localhost:6379/1",
+        description="Celery broker URL for task queue",
+    )
+
+    CELERY_RESULT_BACKEND: str = Field(
+        default="redis://localhost:6379/2",
+        description="Celery result backend URL for task results",
+    )
+
+    CELERY_TASK_SERIALIZER: str = Field(
+        default="json",
+        description="Celery task serialization format",
+    )
+
+    CELERY_ACCEPT_CONTENT: List[str] = Field(
+        default=["json"],
+        description="List of content types accepted by Celery",
+    )
+
+    CELERY_RESULT_SERIALIZER: str = Field(
+        default="json",
+        description="Celery result serialization format",
+    )
+
 
 settings = Settings()
