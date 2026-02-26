@@ -1,7 +1,11 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
 import Header from './components/common/Header'
 import Footer from './components/common/Footer'
 import LandingPage from './pages/LandingPage'
+import RegisterPage from './pages/RegisterPage'
+import LoginPage from './pages/LoginPage'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 function DashboardPage() {
   return (
@@ -45,13 +49,24 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <AppLayout>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AppLayout>
+    <AuthProvider>
+      <AppLayout>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AppLayout>
+    </AuthProvider>
   )
 }
 
