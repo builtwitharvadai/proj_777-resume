@@ -1,0 +1,342 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resume-backend
+  namespace: resume-app
+  labels:
+    app: resume
+    component: backend
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: resume
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: resume
+        component: backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: backend
+        image: ghcr.io/your-org/resume-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        env:
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: APP_NAME
+        - name: APP_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: APP_VERSION
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ENVIRONMENT
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: DEBUG
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: LOG_LEVEL
+        - name: LOG_FORMAT
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: LOG_FORMAT
+        - name: API_V1_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: API_V1_PREFIX
+        - name: ALGORITHM
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ALGORITHM
+        - name: ACCESS_TOKEN_EXPIRE_MINUTES
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ACCESS_TOKEN_EXPIRE_MINUTES
+        - name: DB_POOL_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: DB_POOL_SIZE
+        - name: DB_MAX_OVERFLOW
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: DB_MAX_OVERFLOW
+        - name: DB_ECHO
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: DB_ECHO
+        - name: REDIS_CACHE_TTL
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: REDIS_CACHE_TTL
+        - name: EMAIL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: EMAIL_HOST
+        - name: EMAIL_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: EMAIL_PORT
+        - name: EMAIL_USE_TLS
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: EMAIL_USE_TLS
+        - name: EMAIL_FROM
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: EMAIL_FROM
+        - name: EMAIL_FROM_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: EMAIL_FROM_NAME
+        - name: UPLOAD_DIR
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: UPLOAD_DIR
+        - name: MAX_UPLOAD_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: MAX_UPLOAD_SIZE
+        - name: ALLOWED_EXTENSIONS
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ALLOWED_EXTENSIONS
+        - name: RATE_LIMIT_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: RATE_LIMIT_ENABLED
+        - name: RATE_LIMIT_PER_MINUTE
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: RATE_LIMIT_PER_MINUTE
+        - name: RATE_LIMIT_PER_HOUR
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: RATE_LIMIT_PER_HOUR
+        - name: AI_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: AI_MODEL
+        - name: AI_MAX_TOKENS
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: AI_MAX_TOKENS
+        - name: AI_TEMPERATURE
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: AI_TEMPERATURE
+        - name: CORS_ALLOW_CREDENTIALS
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: CORS_ALLOW_CREDENTIALS
+        - name: SENTRY_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: SENTRY_ENVIRONMENT
+        - name: SENTRY_TRACES_SAMPLE_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: SENTRY_TRACES_SAMPLE_RATE
+        - name: ENABLE_REGISTRATION
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ENABLE_REGISTRATION
+        - name: ENABLE_EMAIL_VERIFICATION
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ENABLE_EMAIL_VERIFICATION
+        - name: ENABLE_PASSWORD_RESET
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ENABLE_PASSWORD_RESET
+        - name: ENABLE_SOCIAL_LOGIN
+          valueFrom:
+            configMapKeyRef:
+              name: resume-backend-config
+              key: ENABLE_SOCIAL_LOGIN
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: REDIS_URL
+        - name: CELERY_BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: CELERY_BROKER_URL
+        - name: CELERY_RESULT_BACKEND
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: CELERY_RESULT_BACKEND
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: SECRET_KEY
+        - name: EMAIL_HOST_USER
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: EMAIL_HOST_USER
+        - name: EMAIL_HOST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: EMAIL_HOST_PASSWORD
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: OPENAI_API_KEY
+        - name: SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: SENTRY_DSN
+        - name: CORS_ORIGINS
+          valueFrom:
+            secretKeyRef:
+              name: resume-backend-secrets
+              key: CORS_ORIGINS
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/uploads
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: uploads
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: logs
+        emptyDir:
+          sizeLimit: 1Gi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - resume
+                - key: component
+                  operator: In
+                  values:
+                  - backend
+              topologyKey: kubernetes.io/hostname
