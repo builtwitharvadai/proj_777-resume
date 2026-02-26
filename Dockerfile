@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for backend application with security best practices
 
 # Base stage for dependencies
-FROM python:3.11-slim as base
+FROM python:3.14-slim as base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
