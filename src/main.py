@@ -9,6 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.api.auth import router as auth_router
 from src.api.health import router as health_router
 from src.core.config import Settings
 from src.core.logging import setup_logging
@@ -137,6 +138,7 @@ def configure_routes(app: FastAPI) -> None:
         app: FastAPI application instance
     """
     app.include_router(health_router, tags=["health"])
+    app.include_router(auth_router, tags=["authentication"])
     logger.info("Routes configured")
 
 
