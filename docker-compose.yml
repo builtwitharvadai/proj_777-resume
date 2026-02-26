@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:15-alpine
+    container_name: resume-db
+    environment:
+      POSTGRES_DB: resume_db
+      POSTGRES_USER: resume_user
+      POSTGRES_PASSWORD: resume_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - resume-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resume_user -d resume_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: resume-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - resume-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # Backend application
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: resume-backend
+    environment:
+      - DATABASE_URL=postgresql://resume_user:resume_password@db:5432/resume_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - DEBUG=True
+      - ENVIRONMENT=development
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:80
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./alembic.ini:/app/alembic.ini
+    ports:
+      - "8000:8000"
+    networks:
+      - resume-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Frontend application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    container_name: resume-frontend
+    ports:
+      - "80:80"
+    networks:
+      - resume-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  resume-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
