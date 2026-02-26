@@ -178,5 +178,27 @@ class Settings(BaseSettings):
         description="Cost threshold in USD for alerting on high AI usage",
     )
 
+    # SendGrid Email Configuration
+    SENDGRID_API_KEY: str = Field(
+        default="",
+        description="SendGrid API key for email notifications",
+    )
+
+    SENDGRID_FROM_EMAIL: str = Field(
+        default="noreply@example.com",
+        description="SendGrid from email address",
+    )
+
+    # Notification Configuration
+    NOTIFICATIONS_ENABLED: bool = Field(
+        default=True,
+        description="Enable/disable notification system",
+    )
+
+    DIGEST_EMAIL_SCHEDULE: str = Field(
+        default="0 8 * * *",
+        description="Cron schedule for digest emails (default: 8 AM daily)",
+    )
+
 
 settings = Settings()
