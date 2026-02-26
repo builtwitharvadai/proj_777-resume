@@ -61,5 +61,53 @@ class Settings(BaseSettings):
         description="API version 1 prefix",
     )
 
+    # AWS S3 Configuration
+    S3_BUCKET_NAME: str = Field(
+        default="resume-documents",
+        description="S3 bucket name for document storage",
+    )
+
+    S3_REGION: str = Field(
+        default="us-east-1",
+        description="AWS region for S3 bucket",
+    )
+
+    AWS_ACCESS_KEY_ID: str = Field(
+        default="",
+        description="AWS access key ID",
+    )
+
+    AWS_SECRET_ACCESS_KEY: str = Field(
+        default="",
+        description="AWS secret access key",
+    )
+
+    # ClamAV Configuration
+    CLAMAV_HOST: str = Field(
+        default="localhost",
+        description="ClamAV daemon hostname",
+    )
+
+    CLAMAV_PORT: int = Field(
+        default=3310,
+        description="ClamAV daemon port",
+    )
+
+    # File Upload Configuration
+    MAX_FILE_SIZE: int = Field(
+        default=10485760,  # 10MB in bytes
+        description="Maximum file size for uploads in bytes",
+    )
+
+    ALLOWED_FILE_TYPES: List[str] = Field(
+        default=[
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
+            "application/msword",
+            "text/plain",
+        ],
+        description="List of allowed MIME types for file uploads",
+    )
+
 
 settings = Settings()
