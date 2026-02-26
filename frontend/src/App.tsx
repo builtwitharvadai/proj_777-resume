@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import DocumentsPage from './pages/DocumentsPage'
+import QAPage from './pages/QAPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 const queryClient = new QueryClient({
@@ -57,6 +58,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DocumentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/qa"
+              element={
+                <ProtectedRoute>
+                  <QAPage />
                 </ProtectedRoute>
               }
             />
