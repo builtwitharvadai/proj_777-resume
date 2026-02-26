@@ -9,7 +9,7 @@ description = "Resume and cover letter generation application"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "fastapi>=0.100.0",
+    "fastapi[websockets]>=0.100.0",
     "sqlalchemy>=2.0.0",
     "alembic>=1.11.0",
     "uvicorn>=0.23.0",
@@ -23,6 +23,7 @@ dependencies = [
     "celery>=5.3.0",
     "redis>=5.0.0",
     "flower>=2.0.0",
+    "websockets>=11.0.0",
 ]
 
 [project.optional-dependencies]
