@@ -141,5 +141,42 @@ class Settings(BaseSettings):
         description="Celery result serialization format",
     )
 
+    # OpenAI Configuration
+    OPENAI_API_KEY: str = Field(
+        default="",
+        description="OpenAI API key for GPT-4 access",
+    )
+
+    OPENAI_MODEL: str = Field(
+        default="gpt-4",
+        description="OpenAI model to use for generation",
+    )
+
+    # AI Service Configuration
+    AI_GENERATION_ENABLED: bool = Field(
+        default=True,
+        description="Enable/disable AI generation features",
+    )
+
+    AI_RATE_LIMIT_FREE: int = Field(
+        default=10,
+        description="AI API rate limit for free tier users (requests per hour)",
+    )
+
+    AI_RATE_LIMIT_PREMIUM: int = Field(
+        default=100,
+        description="AI API rate limit for premium tier users (requests per hour)",
+    )
+
+    AI_RATE_LIMIT_ENTERPRISE: int = Field(
+        default=1000,
+        description="AI API rate limit for enterprise tier users (requests per hour)",
+    )
+
+    AI_COST_ALERT_THRESHOLD: float = Field(
+        default=100.0,
+        description="Cost threshold in USD for alerting on high AI usage",
+    )
+
 
 settings = Settings()
