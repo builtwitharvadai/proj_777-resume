@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from src.api.auth import router as auth_router
 from src.api.documents import router as documents_router
 from src.api.health import router as health_router
+from src.api.qa import router as qa_router
 from src.api.websocket import router as websocket_router
 from src.core.config import Settings
 from src.core.logging import setup_logging
@@ -142,6 +143,7 @@ def configure_routes(app: FastAPI) -> None:
     app.include_router(health_router, tags=["health"])
     app.include_router(auth_router, tags=["authentication"])
     app.include_router(documents_router, tags=["documents"])
+    app.include_router(qa_router, tags=["qa"])
     app.include_router(websocket_router, tags=["websocket"])
     logger.info("Routes configured")
 
